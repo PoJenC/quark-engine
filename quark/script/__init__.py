@@ -113,6 +113,37 @@ class Activity:
         return exported
 
 
+class Receiver:
+    def __init__(self, xml: XMLElement) -> None:
+        self.xml: XMLElement = xml
+
+    def __str__(self) -> str:
+        return self._getAttribute("name")
+
+    def _getAttribute(
+        self, attributeName: str, defaultValue: Any = None
+    ) -> Any:
+        realAttributeName = (
+            f"{{http://schemas.android.com/apk/res/android}}{attributeName}"
+        )
+        return self.xml.get(realAttributeName, defaultValue)
+
+    def hasIntentFilter(self) -> bool:
+        """Check if the activity has an intent filter.
+
+        :return: True/False
+        """
+        return self.xml.find("intent-filter") is not None
+
+    def isExported(self) -> bool:
+        """Check if the activity is exported.
+
+        :return: True/False
+        """
+        exported = self._getAttribute("exported", self.hasIntentFilter())
+        return exported == 'true'
+
+
 class Method:
     def __init__(
         self,
@@ -522,6 +553,18 @@ def getActivities(samplePath: PathLike) -> List[Activity]:
     return [Activity(xml) for xml in apkinfo.activities]
 
 
+def getReceivers(samplePath: PathLike) -> List[Receiver]:
+    """Get receivers from a target sample.
+
+    :param samplePath: target file
+    :return: python list containing receivers
+    """
+    quark = _getQuark(samplePath)
+    apkinfo = quark.apkinfo
+
+    return [Receiver(xml) for xml in apkinfo.receivers]
+
+
 def getApplication(samplePath: PathLike) -> Application:
     """Get the application element from the manifest file of the target sample.
 
@@ -576,3 +619,26 @@ def findMethodInAPK(
     return [_wrapMethodObject(
             quark, caller, methodInstance
             ) for caller in list(caller_set)]
+
+
+def isCheckMethodsCalledInTarget(samplePath: PathLike,
+                                 targetMethod: Union[List[str], Method],
+                                 checkMethods: List[List[str]]) -> bool:
+    overlap = set()
+    quark = _getQuark(samplePath)
+    target = quark.apkinfo.find_method(
+        class_name=targetMethod[0],
+        method_name=targetMethod[1],
+        descriptor=targetMethod[2]
+    )
+    xrefToList = {i for i, _ in quark.apkinfo.lowerfunc(target)}
+    for checkoutItem in checkMethods:
+        tempMethod = quark.apkinfo.find_method(
+            class_name=checkoutItem[0],
+            method_name=checkoutItem[1],
+            descriptor=checkoutItem[2]
+        )
+        if tempMethod is not None:
+            overlap.add(tempMethod)
+
+    return len(xrefToList.intersection(overlap)) > 0

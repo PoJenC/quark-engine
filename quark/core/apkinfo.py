@@ -28,7 +28,8 @@ class AndroguardImp(BaseApkinfo):
 
         if self.ret_type == "APK":
             # return the APK, list of DalvikVMFormat, and Analysis objects
-            self.apk, self.dalvikvmformat, self.analysis = AnalyzeAPK(apk_filepath)
+            self.apk, self.dalvikvmformat, self.analysis = AnalyzeAPK(
+                apk_filepath)
         elif self.ret_type == "DEX":
             # return the sha256hash, DalvikVMFormat, and Analysis objects
             _, _, self.analysis = AnalyzeDex(apk_filepath)
@@ -65,6 +66,16 @@ class AndroguardImp(BaseApkinfo):
         application = manifest_root.find("application")
 
         return application.findall("activity")
+
+    @property
+    def receivers(self) -> List[XMLElement]:
+        if self.ret_type == "DEX":
+            return []
+
+        manifest_root = self.apk.get_android_manifest_xml()
+        application = manifest_root.find("application")
+
+        return application.findall("receiver")
 
     @property
     def android_apis(self) -> Set[MethodObject]:
@@ -214,7 +225,8 @@ class AndroguardImp(BaseApkinfo):
         elif length_operands == 1:
             # Only one register
 
-            reg_list.append(f"v{instruction.get_operands()[length_operands - 1][1]}")
+            reg_list.append(
+                f"v{instruction.get_operands()[length_operands - 1][1]}")
 
             instruction_list.extend(reg_list)
 
