@@ -129,14 +129,14 @@ class Receiver:
         return self.xml.get(realAttributeName, defaultValue)
 
     def hasIntentFilter(self) -> bool:
-        """Check if the activity has an intent filter.
+        """Check if the receiver has an intent filter.
 
         :return: True/False
         """
         return self.xml.find("intent-filter") is not None
 
     def isExported(self) -> bool:
-        """Check if the activity is exported.
+        """Check if the receiver is exported.
 
         :return: True/False
         """
